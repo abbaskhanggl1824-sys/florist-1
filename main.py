@@ -103,12 +103,12 @@ def init_sheets():
         if not ws:
             log.warning("Tab 'websites' not found. Creating a fresh tracking sheet tab...")
             ws = sh.add_worksheet("websites", rows=1000, cols=7)
-            ws.update("A1:G1", [["website", "city", "status", "submitted_at", "notes", "fields_filled", "ai_actions"]])
+            ws.update(range_name="A1:G1", values=[["website", "city", "status", "submitted_at", "notes", "fields_filled", "ai_actions"]])
 
     headers = [str(h).strip().lower() for h in ws.row_values(1)]
     if not headers or "website" not in headers:
         log.warning("Sheet Headers out of sync. Injecting structural automation grid row...")
-        ws.update("A1:G1", [["website", "city", "status", "submitted_at", "notes", "fields_filled", "ai_actions"]])
+        ws.update(range_name="A1:G1", values=[["website", "city", "status", "submitted_at", "notes", "fields_filled", "ai_actions"]])
         time.sleep(1)
 
     return ws
@@ -124,11 +124,11 @@ def update_sheet_row(ws, row_num, status, notes="", fields_filled="", ai_actions
         status_idx = headers.index("status")
         start_col = chr(65 + status_idx)
         end_col = chr(65 + status_idx + 4)
-        ws.update("{}{}:{}{}".format(start_col, excel_row, end_col, excel_row),
-                  [[status, now, notes, fields_filled, ai_actions]])
+        ws.update(range_name="{}{}:{}{}".format(start_col, excel_row, end_col, excel_row),
+                  values=[[status, now, notes, fields_filled, ai_actions]])
     except Exception:
-        ws.update("C{}:G{}".format(excel_row, excel_row),
-                  [[status, now, notes, fields_filled, ai_actions]])
+        ws.update(range_name="C{}:G{}".format(excel_row, excel_row),
+                  values=[[status, now, notes, fields_filled, ai_actions]])
 
     log.info("  [Sheets Save Engine] Captured Row {} -> Sync status: {}".format(excel_row, status))
 
