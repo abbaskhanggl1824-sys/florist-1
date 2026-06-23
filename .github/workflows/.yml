@@ -1,0 +1,57 @@
+name: Run Contact Bot (Florist)
+# ----------------------------------------------------------
+#  Florist outreach bot - link building + AI search visibility
+#  - Manual: Actions tab -> "Run Contact Bot" -> Run workflow
+#  - Auto:   neeche schedule (cron) se roz chalega
+# ----------------------------------------------------------
+# Naye Node version warning ko silence karta hai
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+on:
+  # Manual trigger (Actions tab se button)
+  workflow_dispatch:
+  # Auto schedule - roz subah 4:30 UTC = 10:00 AM IST
+  # NOTE: cron UTC me hota hai. IST = UTC + 5:30.
+  # Har site pe 2 Gemini call (personalize + form-fill) jaati hain,
+  # to 500/day quota me ~240 sites tak ek run me.
+  schedule:
+    - cron: "30 4 * * *"
+# Ek time pe sirf ek hi run
+concurrency:
+  group: contact-bot-florist
+  cancel-in-progress: false
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Install Playwright + Chromium
+        run: |
+          python -m playwright install --with-deps chromium
+      - name: Run contact bot
+        env:
+          GEMINI_API_KEY:    ${{ secrets.GEMINI_API_KEY }}
+          CAPTCHA_API_KEY:   ${{ secrets.CAPTCHA_API_KEY }}
+          GOOGLE_SHEET_ID:   ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CREDS_JSON: ${{ secrets.GOOGLE_CREDS_JSON }}
+        run: |
+          python main.py
+      # Screenshots (debug ke liye) - 7 din tak rahenge
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: screenshots/
+          retention-days: 7
+          if-no-files-found: ignore
